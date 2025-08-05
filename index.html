@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>פסגת המהירות: חקר אינטראקטיבי</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony (Stone, Indigo) -->
+    <!-- Application Structure Plan: The application is structured as a guided journey, starting from the tangible and moving to the abstract. It begins with a hero section posing the core question. The first section, "Nature's Champions," is an interactive dashboard allowing users to compare real-world animal speeds using filters and a dynamic chart. This section now also includes a "Relative Speed Simulation" allowing visual comparison. Subsequent sections ("The Limits of Speed," "Engineered Speed," "Speed in Imagination") use interactive elements like tabs and accordions to break down complex philosophical, theoretical, and speculative concepts into digestible chunks. "The Limits of Speed" now includes a "Time Dilation Calculator" for theoretical exploration. "Speed in Imagination" now features an "AI Image Generator" to visualize imaginative speed concepts. This non-linear, task-oriented structure was chosen over a simple linear replication of the report to enhance user engagement, facilitate understanding of complex topics, and empower the user to explore the content at their own pace, with added interactive simulations and external API integration. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Animal speed data (Cheetah, Falcon, etc.). Goal: Compare. Viz: Dynamic Bar Chart (Chart.js). Interaction: Filter buttons for environments (Land, Air, Water). Justification: Allows direct, user-driven comparison of quantitative data, which is more engaging than a static table.
+        - Report Info: Relative animal speeds. Goal: Simulate & Visualize. Viz: Canvas-based animation. Interaction: Dropdowns to select animals, "Simulate" button. Justification: Provides a direct, visual understanding of speed differences.
+        - Report Info: Theoretical FTL concepts (Wormholes, Warp Drive). Goal: Explain. Presentation: Tabbed interface with simple text and icons. Interaction: Click tabs to reveal content. Justification: Prevents information overload by chunking complex topics.
+        - Report Info: Time Dilation. Goal: Calculate & Explain. Viz: Textual output. Interaction: Slider/input for speed percentage, "Calculate" button. Justification: Helps conceptualize abstract physics principles.
+        - Report Info: Mythological and speculative creatures. Goal: Organize & Inform. Presentation: Accordion/collapsible list. Interaction: Click to expand/collapse. Justification: Keeps the UI clean and allows users to focus on one concept at a time.
+        - Report Info: Imaginative speed concepts. Goal: Visualize & Create. Viz: AI-generated image. Interaction: Text input for prompt, "Generate" button. Justification: Leverages external AI to bring abstract ideas to life visually.
+        - All visualizations use Canvas or HTML/CSS, adhering to the NO SVG/Mermaid constraint. The structure supports a narrative flow from concrete to abstract, enhanced by new interactive elements. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #F5F5F4; /* stone-100 */
+            color: #292524; /* stone-800 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 300px;
+                max-height: 60vh;
+            }
+        }
+        .tab-active {
+            border-color: #4F46E5; /* indigo-600 */
+            color: #4F46E5;
+            background-color: #EEF2FF; /* indigo-100 */
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .relative-speed-canvas {
+            border: 1px solid #ccc;
+            background-color: #e0f2f7; /* light blue for track */
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-indigo-600">פסגת המהירות</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4 space-x-reverse">
+                        <a href="#nature" class="text-stone-600 hover:bg-stone-200 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium">אלופי הטבע</a>
+                        <a href="#limits" class="text-stone-600 hover:bg-stone-200 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium">גבולות המהירות</a>
+                        <a href="#engineered" class="text-stone-600 hover:bg-stone-200 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium">מהירות מהונדסת</a>
+                        <a href="#imagination" class="text-stone-600 hover:bg-stone-200 hover:text-stone-900 px-3 py-2 rounded-md text-sm font-medium">מהירות בדמיון</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="hero" class="text-center py-20 lg:py-32 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight text-stone-900">מהי החיה המהירה ביותר?</h2>
+                <p class="mt-4 max-w-2xl mx-auto text-lg md:text-xl text-stone-600">התשובה מורכבת יותר ממה שנדמה. הצטרפו למסע החוקר מהירות דרך עדשות של ביולוגיה, פיזיקה, מיתולוגיה והדמיון הפרוע ביותר.</p>
+            </div>
+        </section>
+
+        <section id="nature" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">אלופי הטבע</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-stone-600">חלק זה מציג את שיאי המהירות המדהימים שהטבע השיג, כפי שנמדדו מדעית. כאן תוכלו להשוות בין היצורים המהירים ביותר בסביבות שונות - יבשה, אוויר, מים ומיקרו - ולגלות את ההתאמות הייחודיות המאפשרות להם להגיע לביצועים עוצרי נשימה.</p>
+                </div>
+
+                <div class="mt-12">
+                    <div class="flex justify-center flex-wrap gap-2 mb-8">
+                        <button data-filter="land" class="filter-btn bg-white text-indigo-600 px-4 py-2 rounded-full shadow font-semibold border-2 border-indigo-600">יבשה</button>
+                        <button data-filter="air" class="filter-btn bg-white text-stone-600 px-4 py-2 rounded-full shadow font-semibold border-2 border-transparent hover:border-indigo-500">אוויר</button>
+                        <button data-filter="water" class="filter-btn bg-white text-stone-600 px-4 py-2 rounded-full shadow font-semibold border-2 border-transparent hover:border-indigo-500">מים</button>
+                        <button data-filter="micro" class="filter-btn bg-white text-stone-600 px-4 py-2 rounded-full shadow font-semibold border-2 border-transparent hover:border-indigo-500">מיקרו</button>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-8">
+                        <div class="chart-container">
+                            <canvas id="speedChart"></canvas>
+                        </div>
+                        <div id="animal-info" class="mt-8 text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-16 text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">סימולציית מהירות יחסית</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-stone-600">בחר שתי חיות וצפה בסימולציה הממחישה את המהירות היחסית ביניהן על מסלול מירוץ.</p>
+                    <div class="bg-white rounded-xl shadow-lg p-4 md:p-8 mt-8 max-w-2xl mx-auto">
+                        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+                            <select id="animal1Select" class="p-2 border border-stone-300 rounded-md bg-stone-50 text-stone-800">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                            <span class="text-xl font-bold text-stone-700">נגד</span>
+                            <select id="animal2Select" class="p-2 border border-stone-300 rounded-md bg-stone-50 text-stone-800">
+                                <!-- Options will be populated by JS -->
+                            </select>
+                        </div>
+                        <button id="simulateRaceBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300 ease-in-out">הרץ סימולציה</button>
+                        <canvas id="relativeSpeedCanvas" width="600" height="150" class="relative-speed-canvas mt-8"></canvas>
+                        <p id="raceResult" class="mt-4 text-lg font-semibold text-stone-700"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="limits" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">גבולות המהירות</h3>
+                     <p class="mt-4 max-w-3xl mx-auto text-lg text-stone-600">כאן אנו חורגים מהמדידה הפיזית וחוקרים את טבעה של המהירות עצמה. בחלק זה נצלול למושגים פילוסופיים ותיאורטיים, מהמהירות הסובייקטיבית של המחשבה ועד לגבול המהירות הקוסמי - מהירות האור - ונבחן רעיונות היפותטיים המאתגרים את הגבול הזה.</p>
+                </div>
+                
+                <div class="mt-12 max-w-4xl mx-auto">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-stone-50 rounded-lg p-6">
+                            <h4 class="text-xl font-bold text-stone-800">מהירות המחשבה</h4>
+                            <p class="mt-2 text-stone-600">מהירות אינה רק תזוזה פיזית. היא קשורה לתפיסה ולשינוי. אותות עצביים נעים עד 120 מטר לשנייה, והמוח מעבד מידע חושי בתוך אלפיות השנייה. "המהיר ביותר" יכול להיות זה שמעבד מידע בקצב הגבוה ביותר, וחווה את הזמן בצורה דחוסה יותר.</p>
+                        </div>
+                        <div class="bg-stone-50 rounded-lg p-6">
+                            <h4 class="text-xl font-bold text-stone-800">מגבלת מהירות האור (c)</h4>
+                            <p class="mt-2 text-stone-600">על פי תורת היחסות של איינשטיין, שום דבר בעל מסה אינו יכול להגיע למהירות האור בריק (כ-300,000 ק"מ לשנייה). זהו הגבול הבסיסי של הסיבתיות ביקום המוכר לנו, המגדיר את קצב העברת המידע המרבי.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-12">
+                        <h4 class="text-2xl font-bold text-center text-stone-800 mb-6">מעבר לאור: תיאוריות FTL</h4>
+                        <div class="border-b border-stone-200">
+                            <nav class="-mb-px flex justify-center space-x-4 space-x-reverse" aria-label="Tabs">
+                                <button data-tab="warp" class="tab-btn tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">הנעת עיוות</button>
+                                <button data-tab="wormhole" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 font-medium text-sm">חורי תולעת</button>
+                                <button data-tab="quantum" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-stone-500 hover:text-stone-700 hover:border-stone-300 font-medium text-sm">מנהור קוונטי</button>
+                            </nav>
+                        </div>
+                        <div class="mt-6">
+                            <div id="warp" class="tab-content">
+                                <p class="text-stone-600 text-center">רעיון תיאורטי הכולל כיווץ של המרחב-זמן לפני חללית והרחבתו מאחוריה. החללית עצמה אינה נעה מהר מהאור במרחב המקומי שלה, אך "בועת העיוות" שסביבה יכולה לנוע במהירות על-אורית. "חיית עיוות" תהיה יצור המסוגל לייצר אפקט כזה באופן ביולוגי.</p>
+                            </div>
+                            <div id="wormhole" class="tab-content hidden">
+                                <p class="text-stone-600 text-center">"קיצורי דרך" היפותטיים דרך מרקם המרחב-זמן. במקום לנוע מרחק עצום דרך המרחב, ניתן לעבור דרך "מנהרה" המחברת שתי נקודות רחוקות. "חיית חור תולעת" לא תנוע במהירות, אלא תתמרן את טופולוגיית המרחב כדי להגיע ליעדה באופן כמעט מיידי.</p>
+                            </div>
+                             <div id="quantum" class="tab-content hidden">
+                                <p class="text-stone-600 text-center">תופעה קוונטית בה חלקיק "מופיע" בצד השני של מחסום אנרגיה מבלי לחצות אותו באופן קלאסי. "חיית מנהור קוונטי" תשיג תנועה על ידי היעלמות מנקודה אחת והופעה באחרת, ובכך תעקוף את מושג המהירות המסורתי.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-16 text-center">
+                        <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">סימולציית התרחבות זמן</h3>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg text-stone-600">חקור כיצד הזמן משתנה עבור אובייקטים הנעים במהירויות קרובות למהירות האור, על פי תורת היחסות של איינשטיין.</p>
+                        <div class="bg-stone-50 rounded-xl shadow-lg p-4 md:p-8 mt-8 max-w-2xl mx-auto">
+                            <label for="speedOfLightInput" class="block text-stone-700 text-lg font-semibold mb-2">הזן אחוז ממהירות האור (0-99.99%):</label>
+                            <input type="number" id="speedOfLightInput" min="0" max="99.99" step="0.01" value="90"
+                                class="p-2 border border-stone-300 rounded-md w-full sm:w-1/2 text-center bg-white text-stone-800">
+                            <button id="calculateTimeDilationBtn" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300 ease-in-out">חשב התרחבות זמן</button>
+                            <div id="timeDilationResult" class="mt-6 text-lg text-stone-700">
+                                <p>אם תטייל במשך <span class="font-bold">שנה אחת</span> במהירות של <span id="currentSpeedPct">90%</span> ממהירות האור:</p>
+                                <p>על כדור הארץ יעברו כ- <span id="earthTime" class="font-bold">2.29</span> שנים.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="engineered" class="py-16 sm:py-24">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">מהירות מהונדסת</h3>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-stone-600">בחלק זה אנו מתעלמים ממגבלות האבולוציה הטבעית וצוללים לעתיד ספקולטיבי בו טכנולוגיה מתקדמת מעצבת מחדש את משמעות החיים והמהירות. נחקור כיצד הנדסה גנטית, אינטגרציה קיברנטית, ואפילו ישויות של אנרגיה טהורה יכולות לדחוף את המהירות לקצה גבול הדמיון.</p>
+                </div>
+                <div class="mt-12 max-w-3xl mx-auto space-y-4">
+                    <div class="accordion-item bg-white rounded-lg shadow">
+                        <button class="accordion-header w-full text-right p-4 flex justify-between items-center font-semibold text-lg">
+                            <span>הגברה ביולוגית</span>
+                            <span class="accordion-icon transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-stone-600">דמיינו "היפר-צ'יטות" או "בזים על-קוליים" שנוצרו באמצעות הנדסה גנטית. ניתן לשפר דרמטית את יעילות השרירים, מערכות הנשימה, ואפילו לחזק שלדים עם ננו-חומרים. באיזו נקודה יצור מהונדס כזה מפסיק להיות "חיה" והופך למכונה ביולוגית?</p>
+                        </div>
+                    </div>
+                    <div class="accordion-item bg-white rounded-lg shadow">
+                        <button class="accordion-header w-full text-right p-4 flex justify-between items-center font-semibold text-lg">
+                            <span>אינטגרציה קיברנטית</span>
+                            <span class="accordion-icon transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-stone-600">מיזוג של בשר ומכונה. יצורים ביו-מכניים היברידיים יוכלו לשלב את מיטב האבולוציה הביולוגית עם טכנולוגיית הנעה מתקדמת. למשל, בז עם מנועי סילון זעירים, או מפרשן עם "סנפיר עיוות" המאפשר לו לשחות במהירויות המתריסות נגד חוקי ההידרודינמיקה.</p>
+                        </div>
+                    </div>
+                     <div class="accordion-item bg-white rounded-lg shadow">
+                        <button class="accordion-header w-full text-right p-4 flex justify-between items-center font-semibold text-lg">
+                            <span>חיות של מידע ואנרגיה</span>
+                             <span class="accordion-icon transform transition-transform duration-300">▼</span>
+                        </button>
+                        <div class="accordion-content px-4 pb-4">
+                            <p class="text-stone-600">ההגדרה הרדיקלית ביותר של "חיה". ישויות שאינן מבוססות פחמן, אלא קיימות כדפוסי אנרגיה טהורה או מידע. "חיה" כזו יכולה להיות תודעה מבוזרת החוצה רשתות קוסמיות במהירות האור, או אפילו באופן מיידי באמצעות שזירה קוונטית. מהירותה היא קצב התפשטות המידע עצמו.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="imagination" class="py-16 sm:py-24 bg-white">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">מהירות בדמיון</h3>
+                    <p class="mt-4 max-w-3xl mx-auto text-lg text-stone-600">הקסם האנושי במהירות בא לידי ביטוי במיתוסים ובאגדות עתיקות יומין. חלק זה בוחן כיצד תרבויות שונות דמיינו מהירות על-טבעית, מיצורים מיתולוגיים המסוגלים לעקוף כל חץ ועד לאלים המייצגים את מהירות המחשבה או את השליטה המוחלטת בתנועה.</p>
+                </div>
+                <div class="mt-12 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-stone-50 rounded-lg p-6 text-center">
+                        <h4 class="text-xl font-bold text-stone-800">צבי קריניאה</h4>
+                        <p class="mt-2 text-stone-600">אייל מיתולוגי בעל קרני זהב, מהיר כל כך עד שהיה יכול לעקוף חץ במעופו. מהירותו סימלה לא רק מהירות גולמית, אלא גם אתגר הדורש שליטה ודיוק.</p>
+                    </div>
+                    <div class="bg-stone-50 rounded-lg p-6 text-center">
+                        <h4 class="text-xl font-bold text-stone-800">סון ווקונג</h4>
+                        <p class="mt-2 text-stone-600">מלך הקופים מהמיתולוגיה הסינית, שיכול היה לחצות מרחקים עצומים בקפיצה אחת על ענן הקסם שלו. מהירותו לא הייתה פיזית בלבד, אלא ממדית, וייצגה חופש מוחלט.</p>
+                    </div>
+                    <div class="bg-stone-50 rounded-lg p-6 text-center">
+                        <h4 class="text-xl font-bold text-stone-800">הוגין (מחשבה)</h4>
+                        <p class="mt-2 text-stone-600">במיתולוגיה הנורדית, הוגין הוא עורב המייצג את המחשבה עצמה. במרוץ מיתולוגי, הוא ניצח את משרתו של ת'ור, מה שמרמז שמהירות המחשבה היא המהירות האולטימטיבית, הבלתי מנוצחת.</p>
+                    </div>
+                </div>
+
+                <div class="mt-16 text-center">
+                    <h3 class="text-3xl font-bold text-indigo-600 tracking-tight sm:text-4xl">מחולל תמונות AI: מהירות בדמיון</h3>
+                    <p class="mt-4 max-w-2xl mx-auto text-lg text-stone-600">הזן תיאור של יצור או רעיון הקשור למהירות, וצפה כיצד בינה מלאכותית יוצרת תמונה ייחודית.</p>
+                    <div class="bg-stone-50 rounded-xl shadow-lg p-4 md:p-8 mt-8 max-w-2xl mx-auto">
+                        <label for="imagePromptInput" class="block text-stone-700 text-lg font-semibold mb-2">תיאור התמונה:</label>
+                        <input type="text" id="imagePromptInput" placeholder="לדוגמה: צ'יטה רובוטית רצה בעיר עתידנית"
+                            class="p-2 border border-stone-300 rounded-md w-full text-center bg-white text-stone-800 mb-4">
+                        <button id="generateImageBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300 ease-in-out">צור תמונה</button>
+                        <div id="imageResultContainer" class="mt-6">
+                            <div id="imageLoading" class="hidden text-stone-600 font-semibold">טוען תמונה...</div>
+                            <img id="generatedImage" src="" alt="תמונה שנוצרה על ידי AI" class="hidden w-full h-auto rounded-lg shadow-md mx-auto max-w-md">
+                            <p id="imageError" class="hidden text-red-500 mt-2">אירעה שגיאה ביצירת התמונה. נסה שוב מאוחר יותר.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-stone-800 text-white">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+            <p>חקר אינטראקטיבי המבוסס על דוח "פסגת המהירות".</p>
+            <p class="text-sm text-stone-400 mt-2">נוצר כדי להמשיך ולעורר שאלות, הגדרות חדשות ודרכים חדשות לראות את היקום.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const animalData = {
+                land: {
+                    title: 'אלופי היבשה',
+                    animals: [
+                        { name: 'צ\'יטה', speed: 120, description: 'חיית היבשה המהירה ביותר בספרינט, עם האצה מ-0 ל-100 קמ"ש בפחות מ-3 שניות.' },
+                        { name: 'אנטילופה אמריקאית', speed: 88, description: 'בעלת סיבולת יוצאת דופן, יכולה לשמור על מהירויות גבוהות למרחקים ארוכים.' }
+                    ]
+                },
+                air: {
+                    title: 'אקרובטי האוויר',
+                    animals: [
+                        { name: 'בז נודד (צלילה)', speed: 390, description: 'החיה המהירה ביותר בעולם בצלילת הציד המרהיבה שלה.' },
+                        { name: 'סיס לבן גרון', speed: 170, description: 'הציפור המהירה ביותר בטיסה אופקית (מונעת).' },
+                        { name: 'עטלף מקסיקני', speed: 160, description: 'מתחרה חזק על תואר המעופף האופקי המהיר ביותר.' }
+                    ]
+                },
+                water: {
+                    title: 'מאיצי המים',
+                    animals: [
+                        { name: 'מפרשן שחור', speed: 130, description: 'נחשב לאחד הדגים המהירים ביותר, עם גוף הידרודינמי מושלם.' },
+                        { name: 'מפרשן', speed: 110, description: 'ידוע בהתפרצויות מהירות אדירות וזריזות מדהימה בזכות "מפרש" הגב שלו.' },
+                        { name: 'טונה כחולת סנפיר', speed: 78, description: 'אף על פי שמהירות השיא נמוכה יותר, היא מחזיקה בשיא ההאצה במים.' }
+                    ]
+                },
+                micro: {
+                    title: 'ענקי המיקרו',
+                    animals: [
+                        { name: 'חיפושית נמר (יחסית)', speed: 1158, description: 'המהירות היחסית שלה (171 אורכי גוף/שנייה) שוות ערך לאדם הרץ במהירות 1158 קמ"ש.' },
+                        { name: 'זבוב הסוס', speed: 145, description: 'דיווחים מסוימים מייחסים לו מהירות שיא גבוהה במיוחד, אם כי נתון זה שנוי במחלוקת.' },
+                        { name: 'חיפושית נמר (מוחלטת)', speed: 9, description: 'החרק הרץ המהיר ביותר במהירות מוחלטת.' }
+                    ]
+                }
+            };
+
+            const allAnimals = Object.values(animalData).flatMap(category => category.animals);
+
+            const ctx = document.getElementById('speedChart').getContext('2d');
+            let speedChart;
+
+            function createChart(data) {
+                if (speedChart) {
+                    speedChart.destroy();
+                }
+                speedChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.animals.map(a => a.name),
+                        datasets: [{
+                            label: 'מהירות שיא (קמ"ש)',
+                            data: data.animals.map(a => a.speed),
+                            backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(200, 200, 200, 0.1)' },
+                                ticks: { color: '#44403c' }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: '#44403c', font: { size: 14 } }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            title: {
+                                display: true,
+                                text: data.title,
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1c1917'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.x !== null) {
+                                            label += context.parsed.x + ' קמ"ש';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function updateInfo(data) {
+                const infoContainer = document.getElementById('animal-info');
+                infoContainer.innerHTML = data.animals.map(animal => `
+                    <div class="mt-4">
+                        <h4 class="font-bold text-lg text-indigo-700">${animal.name}</h4>
+                        <p class="text-stone-600">${animal.description}</p>
+                    </div>
+                `).join('');
+            }
+
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const filter = button.dataset.filter;
+                    createChart(animalData[filter]);
+                    updateInfo(animalData[filter]);
+
+                    filterButtons.forEach(btn => {
+                        btn.classList.remove('border-indigo-600', 'text-indigo-600');
+                        btn.classList.add('border-transparent', 'text-stone-600');
+                    });
+                    button.classList.add('border-indigo-600', 'text-indigo-600');
+                    button.classList.remove('border-transparent', 'text-stone-600');
+                });
+            });
+
+            createChart(animalData.land);
+            updateInfo(animalData.land);
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabId = button.dataset.tab;
+
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('tab-active');
+                        btn.classList.add('border-transparent', 'text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+                    });
+                    button.classList.add('tab-active');
+                    button.classList.remove('border-transparent', 'text-stone-500', 'hover:text-stone-700', 'hover:border-stone-300');
+
+                    tabContents.forEach(content => {
+                        if (content.id === tabId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+            
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const icon = header.querySelector('.accordion-icon');
+                    
+                    const isOpen = content.style.maxHeight && content.style.maxHeight !== '0px';
+
+                    if (isOpen) {
+                        content.style.maxHeight = '0px';
+                        icon.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + 'px';
+                        icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            });
+
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            // Relative Speed Simulation
+            const animal1Select = document.getElementById('animal1Select');
+            const animal2Select = document.getElementById('animal2Select');
+            const simulateRaceBtn = document.getElementById('simulateRaceBtn');
+            const relativeSpeedCanvas = document.getElementById('relativeSpeedCanvas');
+            const raceResult = document.getElementById('raceResult');
+            const ctxRace = relativeSpeedCanvas.getContext('2d');
+
+            function populateAnimalDropdowns() {
+                allAnimals.forEach(animal => {
+                    const option1 = document.createElement('option');
+                    option1.value = animal.speed;
+                    option1.textContent = animal.name;
+                    animal1Select.appendChild(option1);
+
+                    const option2 = document.createElement('option');
+                    option2.value = animal.speed;
+                    option2.textContent = animal.name;
+                    animal2Select.appendChild(option2);
+                });
+                // Set default selections
+                animal1Select.value = animalData.land.animals[0].speed; // Cheetah
+                animal2Select.value = animalData.air.animals[0].speed; // Peregrine Falcon
+            }
+
+            populateAnimalDropdowns();
+
+            let animationFrameId;
+
+            function drawRace(animal1Pos, animal2Pos, animal1Name, animal2Name) {
+                ctxRace.clearRect(0, 0, relativeSpeedCanvas.width, relativeSpeedCanvas.height);
+
+                // Draw track lines
+                ctxRace.strokeStyle = '#607D8B'; // Blue-grey
+                ctxRace.lineWidth = 2;
+                ctxRace.beginPath();
+                ctxRace.moveTo(0, relativeSpeedCanvas.height / 2);
+                ctxRace.lineTo(relativeSpeedCanvas.width, relativeSpeedCanvas.height / 2);
+                ctxRace.stroke();
+
+                // Draw start/finish lines
+                ctxRace.strokeStyle = '#4CAF50'; // Green
+                ctxRace.beginPath();
+                ctxRace.moveTo(10, 0);
+                ctxRace.lineTo(10, relativeSpeedCanvas.height);
+                ctxRace.stroke();
+                ctxRace.beginPath();
+                ctxRace.moveTo(relativeSpeedCanvas.width - 10, 0);
+                ctxRace.lineTo(relativeSpeedCanvas.width - 10, relativeSpeedCanvas.height);
+                ctxRace.stroke();
+
+                // Draw racers
+                ctxRace.fillStyle = '#FF5722'; // Orange for animal 1
+                ctxRace.fillRect(animal1Pos, relativeSpeedCanvas.height / 2 - 30, 20, 20);
+                ctxRace.fillStyle = '#2196F3'; // Blue for animal 2
+                ctxRace.fillRect(animal2Pos, relativeSpeedCanvas.height / 2 + 10, 20, 20);
+
+                // Labels
+                ctxRace.fillStyle = '#292524';
+                ctxRace.font = '12px Assistant';
+                ctxRace.textAlign = 'right';
+                ctxRace.fillText(animal1Name, animal1Pos - 5, relativeSpeedCanvas.height / 2 - 15);
+                ctxRace.textAlign = 'left';
+                ctxRace.fillText(animal2Name, animal2Pos + 25, relativeSpeedCanvas.height / 2 + 25);
+            }
+
+            simulateRaceBtn.addEventListener('click', () => {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+
+                const speed1 = parseFloat(animal1Select.value);
+                const speed2 = parseFloat(animal2Select.value);
+                const name1 = animal1Select.options[animal1Select.selectedIndex].text;
+                const name2 = animal2Select.options[animal2Select.selectedIndex].text;
+
+                if (isNaN(speed1) || isNaN(speed2) || speed1 <= 0 || speed2 <= 0) {
+                    raceResult.textContent = 'אנא בחר מהירויות חוקיות.';
+                    return;
+                }
+
+                const trackLength = relativeSpeedCanvas.width - 40; // Pixels
+                const duration = 5000; // Milliseconds for the race to complete (for the faster animal)
+
+                let startTime = null;
+
+                function animateRace(currentTime) {
+                    if (!startTime) startTime = currentTime;
+                    const elapsed = currentTime - startTime;
+
+                    const progress1 = Math.min(1, (elapsed / duration) * (speed1 / Math.max(speed1, speed2)));
+                    const progress2 = Math.min(1, (elapsed / duration) * (speed2 / Math.max(speed1, speed2)));
+
+                    const animal1Pos = 20 + (trackLength * progress1);
+                    const animal2Pos = 20 + (trackLength * progress2);
+
+                    drawRace(animal1Pos, animal2Pos, name1, name2);
+
+                    if (progress1 < 1 || progress2 < 1) {
+                        animationFrameId = requestAnimationFrame(animateRace);
+                    } else {
+                        if (speed1 > speed2) {
+                            raceResult.textContent = `${name1} ניצח!`;
+                        } else if (speed2 > speed1) {
+                            raceResult.textContent = `${name2} ניצח!`;
+                        } else {
+                            raceResult.textContent = 'תיקו!';
+                        }
+                    }
+                }
+                raceResult.textContent = '';
+                animationFrameId = requestAnimationFrame(animateRace);
+            });
+
+            // Initial draw for the simulation canvas
+            drawRace(20, 20, animal1Select.options[animal1Select.selectedIndex].text, animal2Select.options[animal2Select.selectedIndex].text);
+
+
+            // Time Dilation Simulation
+            const speedOfLightInput = document.getElementById('speedOfLightInput');
+            const calculateTimeDilationBtn = document.getElementById('calculateTimeDilationBtn');
+            const currentSpeedPct = document.getElementById('currentSpeedPct');
+            const earthTimeSpan = document.getElementById('earthTime');
+
+            function calculateTimeDilation() {
+                const v_percent = parseFloat(speedOfLightInput.value);
+                if (isNaN(v_percent) || v_percent < 0 || v_percent >= 100) {
+                    earthTimeSpan.textContent = 'הזן ערך בין 0 ל-99.99';
+                    return;
+                }
+
+                const v = v_percent / 100; // velocity as a fraction of c
+                const c_squared = 1; // For simplicity, c=1
+                const v_squared_over_c_squared = v * v;
+
+                // Lorentz factor: gamma = 1 / sqrt(1 - v^2/c^2)
+                const gamma = 1 / Math.sqrt(1 - v_squared_over_c_squared);
+
+                const travelerTime = 1; // 1 year for the traveler
+                const earthTime = travelerTime * gamma;
+
+                currentSpeedPct.textContent = `${v_percent}%`;
+                earthTimeSpan.textContent = earthTime.toFixed(2);
+            }
+
+            calculateTimeDilationBtn.addEventListener('click', calculateTimeDilation);
+            // Initial calculation on load
+            calculateTimeDilation();
+
+
+            // AI Image Generation
+            const apiKey = "AIzaSyBXVa9mX446hLa5ZG5liJPk1MBAQmzKdes"; // User provided API Key
+            const imagePromptInput = document.getElementById('imagePromptInput');
+            const generateImageBtn = document.getElementById('generateImageBtn');
+            const imageLoading = document.getElementById('imageLoading');
+            const generatedImage = document.getElementById('generatedImage');
+            const imageError = document.getElementById('imageError');
+
+            async function generateImageWithRetry(prompt, retries = 3, delay = 1000) {
+                imageLoading.classList.remove('hidden');
+                generatedImage.classList.add('hidden');
+                imageError.classList.add('hidden');
+                generateImageBtn.disabled = true;
+
+                for (let i = 0; i < retries; i++) {
+                    try {
+                        const payload = {
+                            instances: { prompt: prompt },
+                            parameters: { "sampleCount": 1 }
+                        };
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.predictions && result.predictions.length > 0 && result.predictions[0].bytesBase64Encoded) {
+                            const imageUrl = `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`;
+                            generatedImage.src = imageUrl;
+                            generatedImage.classList.remove('hidden');
+                            imageLoading.classList.add('hidden');
+                            generateImageBtn.disabled = false;
+                            return;
+                        } else {
+                            throw new Error('Invalid image generation response structure.');
+                        }
+                    } catch (error) {
+                        console.error(`Attempt ${i + 1} failed:`, error);
+                        if (i < retries - 1) {
+                            await new Promise(res => setTimeout(res, delay * Math.pow(2, i))); // Exponential backoff
+                        }
+                    }
+                }
+                imageLoading.classList.add('hidden');
+                imageError.classList.remove('hidden');
+                generateImageBtn.disabled = false;
+            }
+
+            generateImageBtn.addEventListener('click', () => {
+                const prompt = imagePromptInput.value.trim();
+                if (prompt) {
+                    generateImageWithRetry(prompt);
+                } else {
+                    imageError.textContent = 'אנא הזן תיאור לתמונה.';
+                    imageError.classList.remove('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
